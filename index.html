@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Perpétuel - 2 Équipes</title>
+    <style>
+        :root {
+            --morning-color: #ffeb3b;
+            --afternoon-color: #ff5252;
+            --background-color: #f5f5f5;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .schedule-table th,
+        .schedule-table td {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .schedule-table td:first-child {
+            text-align: right;
+            font-weight: 500;
+        }
+
+        .schedule-table td:not(:first-child) {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .schedule-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .morning {
+            background-color: var(--morning-color);
+        }
+
+        .afternoon {
+            background-color: var(--afternoon-color);
+            color: white;
+        }
+
+        .weekend {
+            background-color: white;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            height: 50px;
+            margin-top: 20px;
+            background-color: var(--background-color);
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .schedule-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .controls {
+                position: relative;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Planning Perpétuel - 2 Équipes</h1>
+        
+        <div class="controls">
+            <div class="form-group">
+                <label for="startDate">Date de début :</label>
+                <input type="date" id="startDate">
+            </div>
+            <button onclick="resetSchedule()">Réinitialiser le planning</button>
+        </div>
+
+        <div id="scheduleContainer"></div>
+        <div id="loading" class="loading">Chargement...</div>
+    </div>
+
+    <script>
+        // Configuration
+        const DAYS_IN_FRENCH = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+        const MONTHS_IN_FRENCH = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+        
+        // État global
+        let currentDate = new Date();
+        let isLoading = false;
+
+        // Fonctions utilitaires
+        function getMonday(date) {
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(date.setDate(diff));
+        }
+
+        function getWeekNumber(date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+            const week1 = new Date(d.getFullYear(), 0, 4);
+            return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        }
+
+        function formatDate(date) {
+            const day = DAYS_IN_FRENCH[date.getDay()];
+            const dateNum = date.getDate();
+            const month = MONTHS_IN_FRENCH[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${dateNum} ${month} ${year}`;
+        }
+
+        // Fonctions de génération du planning
+        function generateWeekSchedule(startDate) {
+            const tbody = document.createElement('tbody');
+            
+            for (let i = 0; i < 7; i++) {
+                const currentDate = new Date(startDate);
+                currentDate.setDate(startDate.getDate() + i);
+                
+                const weekNumber = getWeekNumber(currentDate);
+                const isEvenWeek = weekNumber % 2 === 0;
+                const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(currentDate)}</td>
+                    <td class="${isWeekend ? 'weekend' : (isEvenWeek ? 'afternoon' : 'morning')}">
+                        ${isWeekend ? 'WEEK-END' : (isEvenWeek ? 'APRÈS-MIDI' : 'MATIN')}
+                    </td>
+                    <td class="${isWeekend ? 'weekend' : (isEvenWeek ? 'morning' : 'afternoon')}">
+                        ${isWeekend ? 'WEEK-END' : (isEvenWeek ? 'MATIN' : 'APRÈS-MIDI')}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+            
+            return tbody;
+        }
+
+        function initializeTable() {
+            const table = document.createElement('table');
+            table.className = 'schedule-table';
+            
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>Date</th>
+                    <th>Équipe 1</th>
+                    <th>Équipe 2</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+            
+            return table;
+        }
+
+        // Fonctions de gestion du planning
+        function loadMoreWeeks() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            const table = document.querySelector('.schedule-table');
+            const newWeeks = generateWeekSchedule(currentDate);
+            table.appendChild(newWeeks);
+            
+            currentDate.setDate(currentDate.getDate() + 7);
+            isLoading = false;
+        }
+
+        function resetSchedule() {
+            const selectedDate = new Date(document.getElementById('startDate').value || new Date());
+            currentDate = getMonday(selectedDate);
+            
+            const scheduleContainer = document.getElementById('scheduleContainer');
+            scheduleContainer.innerHTML = '';
+            
+            const table = initializeTable();
+            scheduleContainer.appendChild(table);
+            
+            // Charger les 4 premières semaines
+            for (let i = 0; i < 4; i++) {
+                const newWeeks = generateWeekSchedule(currentDate);
+                table.appendChild(newWeeks);
+                currentDate.setDate(currentDate.getDate() + 7);
+            }
+        }
+
+        // Gestionnaire de défilement
+        function handleScroll() {
+            const loadingElement = document.getElementById('loading');
+            const rect = loadingElement.getBoundingClientRect();
+            
+            if (rect.top <= window.innerHeight && !isLoading) {
+                loadMoreWeeks();
+            }
+        }
+
+        // Initialisation
+        document.getElementById('startDate').valueAsDate = new Date();
+        resetSchedule();
+        window.addEventListener('scroll', handleScroll);
+    </script>
+</body>
+</html> 

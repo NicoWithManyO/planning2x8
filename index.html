@@ -229,10 +229,10 @@
                 row.innerHTML = `
                     <td class="${isWeekend ? 'weekend-date' : ''}">${formatDate(currentDate)}</td>
                     <td class="${isWeekend ? 'weekend' : 'team1'}">
-                        ${isWeekend ? '' : (isEvenWeek ? 'APRÈS-MIDI' : 'MATIN')}
+                        ${isWeekend ? '' : (isEvenWeek ? 'Après-midi' : 'Matin')}
                     </td>
                     <td class="${isWeekend ? 'weekend' : 'team2'}">
-                        ${isWeekend ? '' : (isEvenWeek ? 'MATIN' : 'APRÈS-MIDI')}
+                        ${isWeekend ? '' : (isEvenWeek ? 'Matin' : 'Après-midi')}
                     </td>
                 `;
                 tbody.appendChild(row);

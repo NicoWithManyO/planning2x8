@@ -6,11 +6,12 @@
     <title>Planning Perpétuel - 2 Équipes</title>
     <style>
         :root {
-            --morning-color: #ffeb3b;
-            --afternoon-color: #ff5252;
+            --team1-color: #ffeb3b;
+            --team2-color: #ff5252;
             --background-color: #f5f5f5;
             --text-color: #333;
             --border-color: #ddd;
+            --weekend-color: #e0e0e0;
         }
 
         * {
@@ -109,7 +110,7 @@
 
         .schedule-table td:not(:first-child) {
             text-align: center;
-            font-weight: bold;
+            font-weight: 500;
             padding: 4px 2px;
         }
 
@@ -123,17 +124,21 @@
             font-size: 0.9em;
         }
 
-        .morning {
-            background-color: var(--morning-color);
+        .team1 {
+            background-color: var(--team1-color);
         }
 
-        .afternoon {
-            background-color: var(--afternoon-color);
+        .team2 {
+            background-color: var(--team2-color);
             color: white;
         }
 
         .weekend {
-            background-color: white;
+            background-color: var(--weekend-color);
+            color: #666;
+        }
+
+        .weekend-date {
             color: #666;
         }
 
@@ -222,12 +227,12 @@
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${formatDate(currentDate)}</td>
-                    <td class="${isWeekend ? 'weekend' : (isEvenWeek ? 'afternoon' : 'morning')}">
-                        ${isWeekend ? 'WEEK-END' : (isEvenWeek ? 'APRÈS-MIDI' : 'MATIN')}
+                    <td class="${isWeekend ? 'weekend-date' : ''}">${formatDate(currentDate)}</td>
+                    <td class="${isWeekend ? 'weekend' : 'team1'}">
+                        ${isWeekend ? '' : (isEvenWeek ? 'APRÈS-MIDI' : 'MATIN')}
                     </td>
-                    <td class="${isWeekend ? 'weekend' : (isEvenWeek ? 'morning' : 'afternoon')}">
-                        ${isWeekend ? 'WEEK-END' : (isEvenWeek ? 'MATIN' : 'APRÈS-MIDI')}
+                    <td class="${isWeekend ? 'weekend' : 'team2'}">
+                        ${isWeekend ? '' : (isEvenWeek ? 'MATIN' : 'APRÈS-MIDI')}
                     </td>
                 `;
                 tbody.appendChild(row);
